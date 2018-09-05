@@ -1,0 +1,110 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`smooth-scroll`
+
+@demo demo/index.html
+Smooth scroll an element
+
+@microcopy - this is element provides methods to be called for smooth scrolling
+ - scroll()
+-->
+
+<dom-module id="smooth-scroll">
+  <script>
+    Polymer({
+      is: 'smooth-scroll',
+      properties: {},
+      /**
+      * Smooth scroll an elment into view
+      * @target {Node} DOM node object
+      * @options {object}
+      *           - delay
+      *           - duration
+      */
+      scroll: function (target, options) {
+        // define default options
+        const defaultOptions = {
+          align: 'top',
+          delay: 0,
+          duration: 300,
+          scrollElement: window
+        }
+        // combine default and user defined options
+        const _options = Object.assign({}, defaultOptions, options)
+        // get the bound client
+        const targetPosition = target.getBoundingClientRect()
+        // get the scroll Element position
+        const scrollElementPosition = _options.scrollElement.getBoundingClientRect()
+        // get the height of the scroll Element
+        const scrollElementHeight = _options.scrollElement.getBoundingClientRect().bottom - _options.scrollElement.getBoundingClientRect().top
+        // get the height of the element target
+        const targetHeight = targetPosition.bottom - targetPosition.top
+        // get the offset of the scroll Element
+        const startPosition = _options.scrollElement.scrollTop
+        // get the distance between the top of the scroll and the top of the bounding rectangles
+        let distance = target.getBoundingClientRect().top - _options.scrollElement.getBoundingClientRect().top
+        /**
+         * @todo weird trick to position the scroll over the target
+         * I'm still not sure why this works :)
+         */
+        distance = distance - (scrollElementHeight / 2)
+
+        // see where the user wants to align the scroll
+        switch (_options.align) {
+          case 'center':
+            distance = distance + (targetHeight / 2)
+            break;
+          case 'bottom':
+            distance = distance + (targetHeight)
+            break;
+          default:
+            break;
+        }
+
+        // align with center
+        // align with bottom
+        if (_options.align === 'bottom') distance = distance + (targetHeight / 2)
+
+        // record start time
+        let startTime = null
+
+        // internal animation function
+        function animation (currentTime) {
+          if (startTime === null) startTime = currentTime
+          let timeElapsed = currentTime - startTime
+          let run = ease(timeElapsed, startPosition, distance, _options.duration)
+          _options.scrollElement.scrollTop = run
+          if (timeElapsed < _options.duration) requestAnimationFrame(animation)
+        }
+
+        function ease (t, b, c, d) {
+          if ((t/=d/2) < 1) return c/2*t*t + b
+          return -c/2 * ((--t)*(t-2) - 1) + b
+        }
+
+        // Returns a function, that, as long as it continues to be invoked, will not
+        // be triggered. The function will be called after it stops being called for
+        // N milliseconds. If `immediate` is passed, trigger the function on the
+        // leading edge, instead of the trailing.
+        function debounce(func, wait, immediate) {
+          var timeout;
+          return function() {
+            var context = this, args = arguments;
+            var later = function() {
+              timeout = null;
+              if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+          };
+        };
+
+        // start animation
+        requestAnimationFrame(animation)
+      },
+    });
+  </script>
+</dom-module>
